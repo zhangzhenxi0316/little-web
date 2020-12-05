@@ -1,6 +1,5 @@
 {
   "navigationBarTitleText": "uni-app",
-  "usingComponents": {
-    "uni-ec-canvas": "/components/uni-ec-canvas/uni-ec-canvas"
-  }
+  "enablePullDownRefresh": true,
+  "usingComponents": {}
 }

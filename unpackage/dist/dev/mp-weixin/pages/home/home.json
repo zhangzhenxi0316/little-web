@@ -1,0 +1,5 @@
+{
+  "usingComponents": {
+    "uni-ec-canvas": "/components/uni-ec-canvas/uni-ec-canvas"
+  }
+}
