@@ -58,14 +58,14 @@
 
 <script>
 	let deviceDiscover = false;
-	
+
 	let msg = ''
 	export default {
 
 		data() {
 			return {
-				pressDeep:0,
-				cuiDeep:0,
+				pressDeep: 0,
+				cuiDeep: 0,
 				list: {
 					press: {
 						// deep: 10,
@@ -183,7 +183,7 @@
 				deviceId: '',
 				notycharacteristicsId: '',
 				characteristicsId: '',
-				
+
 			}
 
 		},
@@ -195,88 +195,149 @@
 		},
 		onUnload() {
 			uni.closeBLEConnection({
-				deviceId:this.deviceId
+				deviceId: this.deviceId
 			})
 		},
 		onHide() {
 			uni.closeBLEConnection({
-				deviceId:this.deviceId
+				deviceId: this.deviceId
 			})
 		},
 		onShow() {
 			this.createBLEConnection(this.deviceId)
+			this.write('a55a020c00')
 		},
 		methods: {
-			// // 初始化蓝牙适配器
-			// openBluetoothAdapter() {
-			// 	uni.openBluetoothAdapter({
-			// 		success: (res) => {
-			// 			// 蓝牙适配器初始化成功
-			// 			console.log('openBluetoothAdapter success', res);
-			// 			this.startBluetoothDevicesDiscovery()
-			// 		},
-			// 		fail: (err) => {
-			// 			// 蓝牙适配器初始化失败
-			// 			uni.showToast({
-			// 				title: '请打开蓝牙',
-			// 				duration: 1000,
-			// 				icon:'none'
-			// 			})
-			// 			if (err.errCode === 10001) {
-			// 				// 监听蓝牙适配器状态改变
-			// 				uni.onBluetoothAdapterStateChange(function(res) {
-			// 					console.log('BluetoothAdapterStateChange', +res);
-			// 					if (res.available) {
-			// 						this.startBluetoothDevicesDiscovery()
-			// 					}
+			switchFun(category, item) {
+				switch (category) {
+					// 0x02 20ms数据用来看按压数据
+					case "02":
 
-			// 				})
-			// 			}
-			// 		}
-			// 	})
-			// },
-			// // 开始搜寻蓝牙外围设备
-			// startBluetoothDevicesDiscovery() {
+						let obj = this.parse02(item)
+						this.pressDeep = obj.pressDeep;
+						this.cuiDeep = obj.cuiDeep
+						break;
+					case "01":
+						//模型设备编码
+						// console.log(item)
+						let code = item.slice(8, 14)
+						console.log(code)
+						break;
+					case "07":
+						//门的状态
+						let mode = parseInt(item.slice(8, 10), 16)
+						break;
+					case "0b":
+						console.log('闻讯cpr设置');
+						break;
+					case "0a":
+						console.log('接收设置完成');
+						break;
+					case "03":
+						// this.list.press.msg[0].value = parseInt(item.slice(8, 10), 16)
+						// this.list.press.msg[1].value = parseInt(item.slice(10, 12), 16)
+						// this.list.press.msg[2].value = parseInt(item.slice(12, 14), 16)
+						// this.list.press.msg[3].value = parseInt(item.slice(14, 16), 16)
+						// this.list.press.msg[4].value = parseInt(item.slice(16, 18), 16)
+						// this.list.press.msg[5].value = parseInt(item.slice(18, 20), 16)
+						let i = 8;
+						this.list.press.msg = this.list.press.msg.map(a => {
+							a.value = parseInt(item.slice(i, i + 2), 16)
+							i += 2;
+							return a
+						})
+						break;
+					case "04":
+						// blow
+						// this.operateDetail.blow[0].num = parseInt(item.slice(8, 10), 16)
+						// this.operateDetail.blow[1].num = parseInt(item.slice(10, 12), 16)
+						// this.operateDetail.blow[2].num = parseInt(item.slice(12, 14), 16)
+						// this.operateDetail.blow[3].num = parseInt(item.slice(14, 16), 16)
+						// this.operateDetail.blow[4].num = parseInt(item.slice(16, 18), 16)
+						i = 8;
+						this.list.cui.msg = this.list.cui.msg.map(a => {
+							a.value = parseInt(item.slice(i, i + 2), 16)
+							i += 2;
+							return a
+						})
+						break;
+					case "05":
+						// this.operateDetail.press[6].num = parseInt(item.slice(8, 10), 16)
+						// this.operateDetail.press[7].num = parseInt(item.slice(10, 12), 16)
+						break;
+					case "06":
+						let AEDTitle = parseInt(item.slice(8, 10), 16) == 0 ? '关机' : '开机时间不对';
+						console.log('AED开机状态' + AEDTitle)
+						switch (item.slice(10, 12)) {
+							case "00":
+								// this.operateDetail.AED[1].title = '电极未插入';
+								console.log('电极未插入')
+								break;
+							case "01":
+								// this.operateDetail.AED[1].title = '电极插入次序不对';
+								console.log('电极插入次序不对')
+								break;
+							case "02":
+								// this.operateDetail.AED[1].title = '电极贴的位置不对';
+								console.log('电极贴的位置不对')
+								break;
 
-			// 	if (deviceDiscover) {
-			// 		return
-			// 	}
-			// 	deviceDiscover = true
-			// 	uni.startBluetoothDevicesDiscovery({
-			// 		allowDuplicatesKey: false,
-			// 		success: (res) => {
-			// 			console.log('startBluetoothDevicesDiscovery', res);
-			// 			this.onBluetoothDeviceFound();
-			// 		}
-			// 	})
-			// },
-			// // 监听到寻找到的新设备
-			// onBluetoothDeviceFound() {
-			// 	let that = this
-			// 	uni.showLoading({
-			// 		title: '正在搜索设备'
-			// 	})
-			// 	uni.onBluetoothDeviceFound(function(res) {
-			// 		res.devices.forEach(device => {
-			// 			if (!device.name && !device.localName) {
-			// 				return
-			// 			}
-			// 			console.log('device',device);
-			// 			//如果名字相同连接设备
-			// 			if (device.name == devicename) {
-			// 				that.createBLEConnection(device.deviceId);
-			// 				that.deviceId = device.deviceId
-			// 				uni.hideLoading()
-			// 				// console.log('ddddd')
-			// 				that.stopBluetoothDevicesDiscovery()
-			// 				uni.showLoading({
-			// 					title: '搜索到设备正在连接'
-			// 				})
-			// 			}
-			// 		})
+						}
+						switch (item.slice(12, 14)) {
+							case "01":
+								// this.operateDetail.AED[2].title = '正确除颤';
+								console.log('正确除颤')
+								break;
+							case "02":
+								// this.operateDetail.AED[2].title = '危险操作';
+								console.log('危险操作')
+								break;
+							case "03":
+								// this.operateDetail.AED[2].title = '错误除颤';
+								console.log('错误除颤')
+								break;
 
-			// 	})
-			// },
+						}
+						break;
+					case "09":
+						if (item.slice(8, 10) == "00") {
+							// this.operateList[0].name = "意识未判断";
+							// this.operateList[0].isCorrect = false
+							console.log('意识未判断')
+						} else {
+							// this.operateList[0].name = "意识判断"
+							// this.operateList[0].isCorrect = true
+							console.log('意识判断')
+						}
+						if (item.slice(10, 12) == "00") {
+							// this.operateList[1].name = "未检测到动脉";
+							// this.operateList[1].isCorrect = false
+							console.log('未检测到动脉')
+						} else {
+							// this.operateList[1].name = "检测动脉"
+							// this.operateList[1].isCorrect = true
+							console.log('检测动脉')
+						}
+						if (item.slice(12, 14) == "00") {
+							// this.operateList[2].name = "未抬头开放气道";
+							// this.operateList[2].isCorrect = false
+							console.log('未抬头开放气道')
+						} else {
+							// this.operateList[2].name = "抬头开放气道"
+							// this.operateList[2].isCorrect = true
+							console.log('抬头开放气道')
+						}
+						break;
+					case "0c":
+						console.log('询问当前用户id')
+						break;
+
+
+
+
+				}
+			},
+
 			// 创建连接
 			createBLEConnection(deviceId) {
 				uni.createBLEConnection({
@@ -286,15 +347,15 @@
 							title: '连接成功'
 						})
 						console.log('createBLEConnection', res);
-						setTimeout(()=>{
+						setTimeout(() => {
 							this.getBLEDeviceServices(deviceId);
-						},1000)
+						}, 1000)
 					},
 					fail: (err) => {
 						console.log('创建连接失败')
 					}
 				})
-				
+
 			},
 			// 停止蓝牙搜索
 			// stopBluetoothDevicesDiscovery() {
@@ -323,7 +384,7 @@
 							if (UUID_slice == 'FEE0' || UUID_slice == 'fee0') {
 								let index_uuid = index;
 								that.serviceId = all_UUID[index_uuid].uuid //确定需要的服务UUID
-								
+
 							};
 						};
 						console.log('需要的服务UUID', that.serviceId)
@@ -354,8 +415,8 @@
 							if (characteristics_slice == 'FEE1' || characteristics_slice == 'fee1') {
 								let index_uuid = index;
 								that.notycharacteristicsId = characteristics[index_uuid].uuid //需确定要的使能UUID
-								that.characteristicsId= characteristics[index_uuid].uuid //暂时确定的写入UUID
-									// console.log('id1'+characteristicsId)
+								that.characteristicsId = characteristics[index_uuid].uuid //暂时确定的写入UUID
+								// console.log('id1'+characteristicsId)
 								/* 遍历获取characteristicsId */
 								for (let index = 0; index < characteristics_length; index++) {
 									let characteristics_UUID = characteristics[index].uuid; //取出特征值里面的UUID
@@ -391,28 +452,22 @@
 					serviceId: that.serviceId,
 					characteristicId: that.notycharacteristicsId,
 					state: true,
-					success: (res)=> {
+					success: (res) => {
 						console.log('使能成功', res);
 						/* 设备返回值 */
-						uni.onBLECharacteristicValueChange((res) =>{
-							
+						uni.onBLECharacteristicValueChange((res) => {
+
 							let result = res.value;
 							let hex = that.buf2hex(result);
-							hex = hex+msg
+							hex = hex + msg
 							// console.log('返回的值', hex);
 							let resObj = that.parse(hex)
-							msg =resObj.slice
+							msg = resObj.slice
 							// console.log(hex)
-							resObj.strArr.map((item,index)=>{
-								let category = item.slice(6,8)
-								switch(category){
-								    case "02":
-								    let obj =  that.parse02(item)
-									that.pressDeep = obj.pressDeep;
-									that.cuiDeep = obj.cui
-									// console.log(that.pressDeep)
-									console.log(obj.pressDeep,obj.cui)
-								}
+							resObj.strArr.map((item, index) => {
+								let category = item.slice(6, 8)
+								// 
+								that.switchFun(category, item)
 							})
 						});
 					},
@@ -423,118 +478,118 @@
 				})
 			},
 
-			
+
 			/* ArrayBuffer类型数据转为16进制字符串 */
-			    buf2hex (buffer) { // buffer is an ArrayBuffer
-			        return Array.prototype.map.call(new Uint8Array(buffer), x => ('00' + x.toString(16)).slice(-2)).join('');
-			    },
-			
-				    
-				
-				 parse02(str){
-				let i = 8;
-				let pressDeep = parseInt(str.slice(8,10),16)//按压距离
-				let cui = parseInt(parseInt(str.slice(10,12),16)<<8)+parseInt(str.slice(12,14),16)
-				let position = str.slice(14,16)
-				return {
-				    pressDeep,
-				    cui,
-				    position
-				}
-				},
-			 parse(str){
-			    let exp = /a55a/g
-			    let tap = true;
-			    let indexArr = []
-			    let strArr = []
-			    let obj = {}
-			    while(tap){
-			        let res = exp.exec(str);
-			        if(res){
-			            indexArr.push(res.index)
-			        }else{
-			            tap = false;
-			        }
-			    }
-			    
-			    for (let i = 0; i < indexArr.length; i++) {
-			        // 获取长度
-			        let length = parseInt(str.slice(indexArr[i]+4,indexArr[i]+6),16)*2 +6
-			        // indexArr[i]+4==str.length?length=0:length=length
-			        // console.log(indexArr[i]+length)
-			        if(indexArr[i]+length-1<str.length){
-			            let strRes = str.slice(indexArr[i],indexArr[i]+length)
-			            strArr.push(strRes)
-			            if(i==indexArr.length-1){
-			                strRes = str.slice(indexArr[i]+length)
-			                obj.slice = strRes
-			                // console.log(strRes)
-			            }
-			        }else{
-			            let strRes = str.slice(indexArr[i])
-			            obj.slice = strRes
-			            // console.log(indexArr[i]+length)
-			        }
-			        
-			    }
-			    if(indexArr.pop())
-			    return {
-			        strArr,
-			        ...obj
-			    }
+			buf2hex(buffer) { // buffer is an ArrayBuffer
+				return Array.prototype.map.call(new Uint8Array(buffer), x => ('00' + x.toString(16)).slice(-2)).join('');
 			},
- write (str) {
-        var that = this;
-        var value = str;
-        console.log('value', value);
-        /* 将数值转为ArrayBuffer类型数据 */
-        var typedArray = new Uint8Array(value.match(/[\da-f]{2}/gi).map(function (h) {
-            return parseInt(h, 16)
-        }));
-        var buffer = typedArray.buffer;
-        uni.writeBLECharacteristicValue({
-            deviceId: that.deviceId,
-            serviceId: that.serviceId,
-            characteristicId: that.characteristicsId,
-            value: buffer,
-            success: function (res) {
-                console.log('数据发送成功', res);
-            },
-            fail: function (res) {
-                console.log('调用失败', res);
-                /* 调用失败时，再次调用 */
-                uni.writeBLECharacteristicValue({
-                    deviceId: that.deviceId,
-                    serviceId: that.serviceId,
-                    characteristicId: that.characteristicsId,
-                    value: buffer,
-                    success: function (res) {
-                        console.log('第2次数据发送成功', res);
-                    },
-                    fail: function (res) {
-                        console.log('第2次调用失败', res);
-                        /* 调用失败时，再次调用 */
-                        uni.writeBLECharacteristicValue({
-                            deviceId: that.deviceId,
-                            serviceId: that.serviceId,
-                            characteristicId: that.data.characteristicsId,
-                            value: buffer,
-                            success: function (res) {
-                                console.log('第3次数据发送成功', res);
-                            },
-                            fail: function (res) {
-                                console.log('第3次调用失败', res);
-                            }
-                        });
-                    }
-                });
-            }
-        });
-    },
+
+
+
+			parse02(str) {
+				let i = 8;
+				let pressDeep = parseInt(str.slice(8, 10), 16) //按压距离
+				let cui = parseInt(parseInt(str.slice(10, 12), 16) << 8) + parseInt(str.slice(12, 14), 16)
+				let position = str.slice(14, 16)
+				return {
+					pressDeep,
+					cuiDeep: cui,
+					position
+				}
+			},
+			parse(str) {
+				let exp = /a55a/g
+				let tap = true;
+				let indexArr = []
+				let strArr = []
+				let obj = {}
+				while (tap) {
+					let res = exp.exec(str);
+					if (res) {
+						indexArr.push(res.index)
+					} else {
+						tap = false;
+					}
+				}
+
+				for (let i = 0; i < indexArr.length; i++) {
+					// 获取长度
+					let length = parseInt(str.slice(indexArr[i] + 4, indexArr[i] + 6), 16) * 2 + 6
+					// indexArr[i]+4==str.length?length=0:length=length
+					// console.log(indexArr[i]+length)
+					if (indexArr[i] + length - 1 < str.length) {
+						let strRes = str.slice(indexArr[i], indexArr[i] + length)
+						strArr.push(strRes)
+						if (i == indexArr.length - 1) {
+							strRes = str.slice(indexArr[i] + length)
+							obj.slice = strRes
+							// console.log(strRes)
+						}
+					} else {
+						let strRes = str.slice(indexArr[i])
+						obj.slice = strRes
+						// console.log(indexArr[i]+length)
+					}
+
+				}
+				if (indexArr.pop())
+					return {
+						strArr,
+						...obj
+					}
+			},
+			write(str) {
+				var that = this;
+				var value = str;
+				console.log('value', value);
+				console.log('id',this.characteristicsId)
+				/* 将数值转为ArrayBuffer类型数据 */
+				var typedArray = new Uint8Array(value.match(/[\da-f]{2}/gi).map(function(h) {
+					return parseInt(h, 16)
+				}));
+				var buffer = typedArray.buffer;
+				uni.writeBLECharacteristicValue({
+					deviceId: that.deviceId,
+					serviceId: that.serviceId,
+					characteristicId: that.characteristicsId,
+					value: buffer,
+					success: function(res) {
+						console.log('数据发送成功', res);
+					},
+					fail: function(res) {
+						console.log('调用失败', res);
+						/* 调用失败时，再次调用 */
+						uni.writeBLECharacteristicValue({
+							deviceId: that.deviceId,
+							serviceId: that.serviceId,
+							characteristicId: that.characteristicsId,
+							value: buffer,
+							success: function(res) {
+								console.log('第2次数据发送成功', res);
+							},
+							fail: function(res) {
+								console.log('第2次调用失败', res);
+								/* 调用失败时，再次调用 */
+								uni.writeBLECharacteristicValue({
+									deviceId: that.deviceId,
+									serviceId: that.serviceId,
+									characteristicId: that.characteristicsId,
+									value: buffer,
+									success: function(res) {
+										console.log('第3次数据发送成功', res);
+									},
+									fail: function(res) {
+										console.log('第3次调用失败', res);
+									}
+								});
+							}
+						});
+					}
+				});
+			},
 		}
 
 	}
-	
 </script>
 
 <style lang="scss" scoped>

@@ -178,6 +178,7 @@
 		},
 		
 		methods: {
+			
 			again_search () {
 			    var that = this;
 			    var device = [];
